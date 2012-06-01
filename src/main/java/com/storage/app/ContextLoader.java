@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
+import com.storage.app.utils.ResourcesConstants;
+
 public class ContextLoader {
 	
 	private final static ContextLoader context = new ContextLoader(); 
@@ -14,7 +16,7 @@ public class ContextLoader {
 	private ContextLoader() {
 		Properties properties = new Properties();
 		
-		InputStream in = getClass().getResourceAsStream("/containers.properties");
+		InputStream in = getClass().getResourceAsStream("/"+ ResourcesConstants.CONTAINER_FILE);
 		try {
 			
 			properties.load(in);
@@ -32,12 +34,8 @@ public class ContextLoader {
 		}
 	}
 	
-	public static ContextLoader getInstance() {
-		return context;
-	}
-	
-	public File getContainerPath() {
-		return containerPath;
+	public static File getContainerPath() {
+		return context.containerPath;
 	}
 	
 	

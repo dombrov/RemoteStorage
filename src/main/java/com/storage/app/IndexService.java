@@ -2,7 +2,7 @@ package com.storage.app;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.util.Collection;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -13,7 +13,7 @@ import com.storage.app.resources.DirectoryTree;
 import com.storage.app.resources.FileDescriptor;
 import com.storage.app.resources.Files;
 import com.storage.app.utils.DateFormatUtil;
-import com.storage.app.utils.IndexFactory;
+import com.storage.app.utils.IndexGenerator;
 import com.storage.app.utils.JAXBBuilder;
 
 public class IndexService {
@@ -27,8 +27,7 @@ public class IndexService {
 	private DirectoryTree directoryTree;
 	
 	private IndexService() {
-		ContextLoader cl = ContextLoader.getInstance();
-		File rootDir = cl.getContainerPath();
+		File rootDir = ContextLoader.getContainerPath();
 		directoriesIndexFile = new File(rootDir, indexDirName);
 	}
 	
@@ -39,13 +38,13 @@ public class IndexService {
 	/**
 	 * 
 	 */
-	public synchronized void reindexFiles() {
-		ContextLoader cl = ContextLoader.getInstance();
+	public void reindexFiles() {
 		try {
-			File rootDir = cl.getContainerPath();
-			int rootIndex = IndexFactory.getIndex();
+			File rootDir = ContextLoader.getContainerPath();
+			IndexGenerator.resetIndex();
+			int rootIndex = IndexGenerator.nextIndex();
 			directoryTree = new DirectoryTree(rootIndex, rootIndex, rootDir.getName());
-			reindexDir(rootDir, directoryTree);
+			indexDirectoryFiles(rootDir, directoryTree);
 			
 			JAXBBuilder.toXML(directoryTree, directoriesIndexFile);
 			
@@ -58,10 +57,13 @@ public class IndexService {
 	 * 
 	 * @param directoryTree
 	 */
-	public synchronized void reindexFiles(DirectoryTree directoryTree) {
+	public void reindexDirectory(DirectoryTree directoryTree) {
 		try {
 			File dir = IndexService.getInstance().getFile(directoryTree);
-			reindexDir(dir, directoryTree);
+			indexDirectoryFiles(dir, directoryTree);
+			
+			JAXBBuilder.toXML(directoryTree, directoriesIndexFile);
+			
 		} catch (FileNotFoundException e) {
 			throw new WebApplicationException(e);
 		}
@@ -72,9 +74,23 @@ public class IndexService {
 	 * @param dir
 	 * @return
 	 */
-	public Collection<FileDescriptor> getIndexedFiles(File dir) {
+	public Files getIndexedFiles(DirectoryTree dirDetails) {
+		File dir = IndexService.getInstance().getFile(dirDetails);
+		File indexFile = new File(dir, indexFileName);
+		if (!indexFile.exists()) {
+			Files files = new Files();
+			files.setDirId(dirDetails.getId());
+			files.setDirParentId(dirDetails.getId());
+			files.setFiles(new ArrayList<FileDescriptor>());
+			return files;
+		}
+		
 		Files files = JAXBBuilder.fromXML(new File(dir, indexFileName), Files.class);
-		return files.getFiles();
+		
+		if (files.getFiles() == null) {
+			files.setFiles(new ArrayList<FileDescriptor>());
+		}
+		return files;
 	}
 
 	/**
@@ -83,9 +99,9 @@ public class IndexService {
 	 * @param dir
 	 * @return
 	 */
-	public FileDescriptor getIndexedFile(int id, File dir) {
-		Collection<FileDescriptor> files = getIndexedFiles(dir);
-		for (FileDescriptor file : files) {
+	public FileDescriptor getIndexedFile(int id, DirectoryTree dirDetails) {
+		Files files = getIndexedFiles(dirDetails);
+		for (FileDescriptor file : files.getFiles()) {
 			if (file.getId() == id) {
 				return file;
 			}
@@ -119,9 +135,9 @@ public class IndexService {
 	 */
 	public File getFile(DirectoryTree dir) {
 		if (dir.getId() == dir.getParent()) {
-			return ContextLoader.getInstance().getContainerPath();
+			return ContextLoader.getContainerPath();
 		} else {
-			File rootDir = ContextLoader.getInstance().getContainerPath();
+			File rootDir = ContextLoader.getContainerPath();
 			String path = "";
 			while (dir.getId() != dir.getParent()) {
 				path = dir.getName() + File.separator + path ;
@@ -148,11 +164,7 @@ public class IndexService {
 		return null;
 	}
 	
-	private void reindexDir(File dir, DirectoryTree directoryTree) throws FileNotFoundException {
-		
-		if (!dir.exists()) {
-			return;
-		}
+	private void indexDirectoryFiles(File dir, DirectoryTree directoryTree) throws FileNotFoundException {
 		
 		SortedSet<FileDescriptor> filesToStore = new TreeSet<FileDescriptor>();
 		
@@ -173,9 +185,15 @@ public class IndexService {
 
 			
 			if (file.isDirectory()) {
-				DirectoryTree child = new DirectoryTree(fileHead.getId(), directoryTree.getId(), fileHead.getName());
+				DirectoryTree child = directoryTree.getChild(fileHead.getName());
+				if (child == null) {
+					child = new DirectoryTree(IndexGenerator.nextIndex(), directoryTree.getId(), fileHead.getName());
+				}
 				directoryTree.addChild(child);
-				reindexDir(file, child);
+				
+				fileHead.setId(child.getId());
+				
+				indexDirectoryFiles(file, child);
 			}
 		}
 
@@ -184,12 +202,18 @@ public class IndexService {
 
 	}
 	
-	private synchronized DirectoryTree getDirectoryTree() {
+	private DirectoryTree getDirectoryTree() {
 		if (directoryTree == null) {
-			directoryTree = JAXBBuilder.fromXML(directoriesIndexFile, DirectoryTree.class);
+			if (directoriesIndexFile.exists()) {
+				directoryTree = JAXBBuilder.fromXML(directoriesIndexFile, DirectoryTree.class);	
+			} else {
+				int rootIndex = IndexGenerator.nextIndex();
+				directoryTree = new DirectoryTree(rootIndex, rootIndex, directoriesIndexFile.getParentFile().getName());
+			}
+			
 		}
 		return directoryTree;
 	}
-
+	
 
 }

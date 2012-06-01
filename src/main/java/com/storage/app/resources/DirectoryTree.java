@@ -70,5 +70,14 @@ public class DirectoryTree {
 	public void setName(String name) {
 		this.name = name;
 	}
-
+	
+	public DirectoryTree getChild(String name) {
+		for (DirectoryTree dir : childs) {
+			if (dir.name.equals(name)) {
+				return dir;
+			}
+		}
+		return null;
+	}
+	
 }

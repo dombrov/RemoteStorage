@@ -9,10 +9,13 @@ $(document).ready(function() {
 
 	$.getJSON('rest/rep/' + paramId, function(data) {
 		var container = $("#for_iteration");
-		if (data.file instanceof Array) {
-			parseJSONArray(data.file);
-		} else {
-			parseJSONFileObject(data.file, 0);
+		
+		if (typeof(data.file) != "undefined") {
+			if (data.file instanceof Array) {
+				parseJSONArray(data.file);
+			} else {
+				parseJSONFileObject(data.file, 0);
+			}
 		}
 		
 		container.find("#file_name").attr("href", "?id="+data.dirParentId);

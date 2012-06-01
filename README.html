@@ -1,5 +1,95 @@
-<html>
-<body>
-<h1>Remote Storage</h1>
-</body>
-</html>
+<html><head><title>Remote File Storage</title></head>
+
+
+  <body>
+    <h1>Remote File Storage</h1>
+    <p>This example demonstrates a simple web storage service.
+    </p>
+    <p>The web storage service enables to upload and download files.
+    </p>
+    <p>The web storage service can respond with multiple Media Types (plain text, xml, html, json).
+    </p>
+  
+    <h2>Contents</h2>
+    <p>The example consists of web resources implemented by the following:
+        </p><dl>
+            <dt><code>com.storage.app.FileService.getFileList()</code></dt>
+            <dd>Provides file list with basic info from container's root folder 
+            </dd>
+            <dt><code>com.storage.app.FileService.getFile(String dirId)</code></dt>
+            <dd>Provides file list with basic info from {dirId} folder 
+            </dd>
+            <dt><code>com.storage.app.FileService.getFile(String dirId, String fileID)</code></dt>
+            <dd>Return file as octet stream
+            </dd>
+            <dt><code>com.storage.app.FileService.uploadFile(String dirIdToUpload,
+					 InputStream uploadedInputStream,
+					 FormDataContentDisposition fileDetail,
+					 String fileName)</code></dt>
+            <dd>Upload file in a specific directory {dirIdToUpload}
+            </dd>
+        </dl>
+    <p>The mapping of the URI path space is presented in the following table:</p>
+	<table border="1">
+	<tr>
+	<th>URI path</th>
+	<th>Methods</th>
+	<th>HTTP methods</th>
+	</tr>
+	<tr>
+	<td>/rest/rep</td>
+	<td>getFileList</td>
+	<td>GET</td>
+	</tr>
+	<tr>
+	<td>/rest/rep/{dir}</td>
+	<td>getFile</td>
+	<td>GET</td>
+	</tr>
+	<tr>
+	<td>/rest/rep/{dir}/{fileid}</td>
+	<td>getFile</td>
+	<td>GET</td>
+	</tr>
+	<tr>
+	<td>/rest/rep/upload</td>
+	<td>uploadFile</td>
+	<td>POST</td>
+	</tr>
+	<tr>
+	<td>/rest/rep/reindex</td>
+	<td>reindexFiles</td>
+	<td>GET</td>
+	</tr>
+	</table>
+ 
+    <h2>Running the Example</h2>
+    <p>Set the container's absolulte path in container.properties file:</p>
+    <blockquote><pre>
+		ex.: /home/storage</pre></blockquote>
+    <p>Run the example as follows:</p>
+    <blockquote><pre>
+		mvn jetty:run</pre></blockquote>
+    <p>This deploys the web storage service using 
+        <a href="http://jetty.codehaus.org/jetty/">Jetty</a>.
+    </p>
+
+    <p>Home page:</p>
+    <blockquote><pre>
+		http://localhost:8080/storage-app/</pre></blockquote>
+
+    <p>The web home page:</p>
+    <blockquote><pre>
+		http://localhost:8080/storage-app/</pre></blockquote>
+
+
+    <p>Create war file:</p>
+    <blockquote><pre>
+		mvn package</pre></blockquote>
+		
+    <p>Run test:</p>
+    <blockquote><pre>
+		mvn clean test -Dcontainer.type=EmbeddedGF -DenableLogging</pre></blockquote>
+
+ 
+  </body></html>

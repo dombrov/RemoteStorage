@@ -5,7 +5,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.Collection;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -37,22 +36,22 @@ public class FileService {
 	
 	@Context
 	Request request;
-
+	
+	/**
+	 * Get the file list of container's root directory  
+	 * @return
+	 */
 	@GET
-	@Path("{dir}/{fileid}")
-	@Produces(MediaType.APPLICATION_OCTET_STREAM)
-	public Response getFile(@PathParam("dir") String dirId, @PathParam("fileid") String fileID) {
-		
-		DirectoryTree dirDetails = IndexService.getInstance().getDirectoryIndex(Integer.valueOf(dirId));
-		File dir = IndexService.getInstance().getFile(dirDetails);
-		
-		FileDescriptor file = IndexService.getInstance().getIndexedFile(Integer.valueOf(fileID), dir);
-		
-		return Response.ok(new File(dir, file.getName()))
-				.header("content-disposition","attachment; filename = " + file.getName())
-				.build();
+	@Produces(MediaType.APPLICATION_JSON)
+	public Files getFileList() {
+		return readFiles(IndexService.getInstance().getRootDirectoryIndex());
 	}
 
+	/**
+	 * Get the file list of directory with {dirId} id.
+	 * @param dirId
+	 * @return
+	 */
 	@GET
 	@Path("{dir}")
 	@Produces(MediaType.APPLICATION_JSON)
@@ -61,38 +60,78 @@ public class FileService {
 		return readFiles(dirDetails);
 	}
 	
+
+	/**
+	 * Get file defined by {fileId} from {dirId} directory
+	 * @param dirId
+	 * @param fileID
+	 * @return
+	 */
 	@GET
-	@Produces(MediaType.APPLICATION_JSON)
-	public Files getFileList() {
-		return readFiles(IndexService.getInstance().getRootDirectoryIndex());
+	@Path("{dir}/{fileid}")
+	@Produces(MediaType.APPLICATION_OCTET_STREAM)
+	public Response getFile(@PathParam("dir") String dirId, 
+			@PathParam("fileid") String fileID) {
+		
+		DirectoryTree dirDetails = getIndexService().getDirectoryIndex(Integer.valueOf(dirId));
+		FileDescriptor file = getIndexService().getIndexedFile(Integer.valueOf(fileID), dirDetails);
+		
+		File dir = getIndexService().getFile(dirDetails);
+		return Response.ok(new File(dir, file.getName()))
+				.header("content-disposition","attachment; filename = " + file.getName())
+				.build();
 	}
-	
-	
+
+	/**
+	 * Upload file in directory specified by {dirId}
+	 * @param dirIdToUpload
+	 * @param uploadedInputStream
+	 * @param fileDetail
+	 * @return
+	 */
 	@POST
 	@Path("/upload")
 	@Consumes(MediaType.MULTIPART_FORM_DATA)
 	public Response uploadFile(
 		@FormDataParam("dirId") String dirIdToUpload,
 		@FormDataParam("file") InputStream uploadedInputStream,
-		@FormDataParam("file") FormDataContentDisposition fileDetail) {
+		@FormDataParam("file") FormDataContentDisposition fileDetail,
+		@FormDataParam("fileName") String fileName) {
 		
-		DirectoryTree dirDetails = IndexService.getInstance().getDirectoryIndex(Integer.valueOf(dirIdToUpload));
-		File dir = IndexService.getInstance().getFile(dirDetails);
-		File destFile = new File(dir, fileDetail.getFileName());
+		if (fileName == null) {
+			fileName = fileDetail.getFileName();
+		}
+		
+		DirectoryTree dirDetails = getIndexService().getDirectoryIndex(Integer.valueOf(dirIdToUpload));
+		File dir = getIndexService().getFile(dirDetails);
+		File destFile = new File(dir, fileName);
 		
 		// save it
 		writeToFile(uploadedInputStream, destFile);
 		
-		IndexService.getInstance().reindexFiles(dirDetails);
+		getIndexService().reindexDirectory(dirDetails);
  
 		String output = "File uploaded successfully";
  
 		return Response.ok().entity(output).build();
  
 	}
+
+	/**
+	 * Container reindex
+	 * @return
+	 */
+	@GET
+	@Path("/reindex")
+	@Produces(MediaType.TEXT_PLAIN)
+	public String reindexFiles() {
+		getIndexService().reindexFiles();
+		return "Reindex done successfully!!!";
+	}
+	
  
 	/**
-	 * save uploaded file
+	 * save file
 	 * @param uploadedInputStream
 	 * @param uploadedFileLocation
 	 */
@@ -127,19 +166,21 @@ public class FileService {
 		UriBuilder uriBuilder = uriInfo.getBaseUriBuilder();
 		String uri = uriBuilder.path(getClass()).build().toASCIIString();
 		
-		File dir = IndexService.getInstance().getFile(dirDetails);
-		Collection<FileDescriptor> files = IndexService.getInstance().getIndexedFiles(dir);
+		Files files = IndexService.getInstance().getIndexedFiles(dirDetails);
 		
-		for (FileDescriptor file : files) {
+		for (FileDescriptor file : files.getFiles()) {
 			if (file.isDirectory()) {
 				file.setUri(uri + "/" + file.getId());
 			} else {
 				file.setUri(uri + "/" + dirDetails.getId() + "/" + file.getId());
 			}
 		}
+	 return files;
 		
-	 return new Files(files, dirDetails);
-		
+	}
+	
+	private IndexService getIndexService() {
+		return IndexService.getInstance();
 	}
 	
 	
