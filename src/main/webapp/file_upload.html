@@ -1,0 +1,39 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+<head>
+<title>File upload</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<style type="text/css">
+a {
+	text-decoration: none;
+	color: #0033CC;
+}
+</style>
+
+<script type="text/javascript">
+function urlParam(name) { 
+	var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(top.window.location.href); 
+	return (results !== null) ? results[1] : null; 
+}
+
+function setDirectoryID() {
+	var id = urlParam("id");
+	document.getElementById("dirId").value=id; 
+}
+
+</script>
+
+</head>
+<body onload="setDirectoryID()">
+<h1>File Upload</h1>
+ 
+	<form action="rest/rep/upload" method="post" enctype="multipart/form-data">
+	    <input id="dirId" name="dirId" type="hidden" value="" />
+	   <p>
+		Select a file : <input type="file" name="file" size="50" />
+	   </p>
+	   <input type="submit" value="Upload" />
+	</form>
+	
+</body>
+</html>
