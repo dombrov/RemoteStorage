@@ -10,7 +10,7 @@ import java.util.TreeSet;
 import javax.ws.rs.WebApplicationException;
 
 import com.storage.app.resources.DirectoryTree;
-import com.storage.app.resources.FileDescriptor;
+import com.storage.app.resources.FileDetails;
 import com.storage.app.resources.Files;
 import com.storage.app.utils.DateFormatUtil;
 import com.storage.app.utils.IndexGenerator;
@@ -38,7 +38,7 @@ public class IndexService {
 	/**
 	 * 
 	 */
-	public void reindexFiles() {
+	public synchronized void reindexFiles() {
 		try {
 			File rootDir = ContextLoader.getContainerPath();
 			IndexGenerator.resetIndex();
@@ -57,7 +57,7 @@ public class IndexService {
 	 * 
 	 * @param directoryTree
 	 */
-	public void reindexDirectory(DirectoryTree directoryTree) {
+	public synchronized void reindexDirectory(DirectoryTree directoryTree) {
 		try {
 			File dir = IndexService.getInstance().getFile(directoryTree);
 			indexDirectoryFiles(dir, directoryTree);
@@ -81,14 +81,14 @@ public class IndexService {
 			Files files = new Files();
 			files.setDirId(dirDetails.getId());
 			files.setDirParentId(dirDetails.getId());
-			files.setFiles(new ArrayList<FileDescriptor>());
+			files.setFiles(new ArrayList<FileDetails>());
 			return files;
 		}
 		
 		Files files = JAXBBuilder.fromXML(new File(dir, indexFileName), Files.class);
 		
 		if (files.getFiles() == null) {
-			files.setFiles(new ArrayList<FileDescriptor>());
+			files.setFiles(new ArrayList<FileDetails>());
 		}
 		return files;
 	}
@@ -99,9 +99,9 @@ public class IndexService {
 	 * @param dir
 	 * @return
 	 */
-	public FileDescriptor getIndexedFile(int id, DirectoryTree dirDetails) {
+	public FileDetails getIndexedFile(int id, DirectoryTree dirDetails) {
 		Files files = getIndexedFiles(dirDetails);
-		for (FileDescriptor file : files.getFiles()) {
+		for (FileDetails file : files.getFiles()) {
 			if (file.getId() == id) {
 				return file;
 			}
@@ -166,7 +166,7 @@ public class IndexService {
 	
 	private void indexDirectoryFiles(File dir, DirectoryTree directoryTree) throws FileNotFoundException {
 		
-		SortedSet<FileDescriptor> filesToStore = new TreeSet<FileDescriptor>();
+		SortedSet<FileDetails> filesToStore = new TreeSet<FileDetails>();
 		
 		for (File file : dir.listFiles()) {
 			
@@ -174,7 +174,7 @@ public class IndexService {
 				continue;
 			}
 			
-			FileDescriptor fileHead = new FileDescriptor();
+			FileDetails fileHead = new FileDetails();
 			fileHead.setId(filesToStore.size() + 1);
 			fileHead.setName(file.getName());
 			fileHead.setSize(file.length());
@@ -204,13 +204,16 @@ public class IndexService {
 	
 	private DirectoryTree getDirectoryTree() {
 		if (directoryTree == null) {
-			if (directoriesIndexFile.exists()) {
-				directoryTree = JAXBBuilder.fromXML(directoriesIndexFile, DirectoryTree.class);	
-			} else {
-				int rootIndex = IndexGenerator.nextIndex();
-				directoryTree = new DirectoryTree(rootIndex, rootIndex, directoriesIndexFile.getParentFile().getName());
-			}
-			
+			synchronized (this) {
+				if (directoriesIndexFile.exists()) {
+					directoryTree = JAXBBuilder.fromXML(directoriesIndexFile,
+							DirectoryTree.class);
+				} else {
+					int rootIndex = IndexGenerator.nextIndex();
+					directoryTree = new DirectoryTree(rootIndex, rootIndex,
+							directoriesIndexFile.getParentFile().getName());
+				}
+			}				
 		}
 		return directoryTree;
 	}

@@ -7,7 +7,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 
 @XmlRootElement(name = "file")
 @XmlAccessorType(XmlAccessType.FIELD)
-public class FileDescriptor implements Comparable<FileDescriptor> {
+public class FileDetails implements Comparable<FileDetails> {
 	
 	@XmlAttribute
 	private int id;
@@ -78,8 +78,8 @@ public class FileDescriptor implements Comparable<FileDescriptor> {
 	
 	@Override
 	public boolean equals(Object obj) {
-		if (obj instanceof FileDescriptor) {
-			FileDescriptor o = (FileDescriptor) obj;
+		if (obj instanceof FileDetails) {
+			FileDetails o = (FileDetails) obj;
 			return id == o.id;
 		} else {
 			return false;
@@ -87,7 +87,7 @@ public class FileDescriptor implements Comparable<FileDescriptor> {
 	}
 	
 	@Override
-	public int compareTo(FileDescriptor o) {
+	public int compareTo(FileDetails o) {
 		if (isDirectory && !o.isDirectory) {
 			return -1;
 		} else if (!isDirectory && o.isDirectory) {

@@ -21,7 +21,7 @@ import javax.ws.rs.core.UriInfo;
 import javax.xml.ws.WebServiceException;
 
 import com.storage.app.resources.DirectoryTree;
-import com.storage.app.resources.FileDescriptor;
+import com.storage.app.resources.FileDetails;
 import com.storage.app.resources.Files;
 import com.sun.jersey.core.header.FormDataContentDisposition;
 import com.sun.jersey.multipart.FormDataParam;
@@ -42,7 +42,7 @@ public class FileService {
 	 * @return
 	 */
 	@GET
-	@Produces(MediaType.APPLICATION_JSON)
+	@Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
 	public Files getFileList() {
 		return readFiles(IndexService.getInstance().getRootDirectoryIndex());
 	}
@@ -54,7 +54,7 @@ public class FileService {
 	 */
 	@GET
 	@Path("{dir}")
-	@Produces(MediaType.APPLICATION_JSON)
+	@Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
 	public Files getFile(@PathParam("dir") String dirId) {
 		DirectoryTree dirDetails = IndexService.getInstance().getDirectoryIndex(Integer.valueOf(dirId));
 		return readFiles(dirDetails);
@@ -74,7 +74,7 @@ public class FileService {
 			@PathParam("fileid") String fileID) {
 		
 		DirectoryTree dirDetails = getIndexService().getDirectoryIndex(Integer.valueOf(dirId));
-		FileDescriptor file = getIndexService().getIndexedFile(Integer.valueOf(fileID), dirDetails);
+		FileDetails file = getIndexService().getIndexedFile(Integer.valueOf(fileID), dirDetails);
 		
 		File dir = getIndexService().getFile(dirDetails);
 		return Response.ok(new File(dir, file.getName()))
@@ -168,7 +168,7 @@ public class FileService {
 		
 		Files files = IndexService.getInstance().getIndexedFiles(dirDetails);
 		
-		for (FileDescriptor file : files.getFiles()) {
+		for (FileDetails file : files.getFiles()) {
 			if (file.isDirectory()) {
 				file.setUri(uri + "/" + file.getId());
 			} else {

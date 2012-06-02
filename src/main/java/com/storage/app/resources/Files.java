@@ -18,22 +18,22 @@ public class Files {
 	private int dirParentId;
 	
 	@XmlElement(name = "file")
-	private Collection<FileDescriptor> files;
+	private Collection<FileDetails> files;
 	
 	public Files() {
 	}
 	
-	public Files(Collection<FileDescriptor> files, DirectoryTree directory) {
+	public Files(Collection<FileDetails> files, DirectoryTree directory) {
 		this.files = files;
 		dirId = directory.getId();
 		dirParentId = directory.getParent();
 	}
 
-	public Collection<FileDescriptor> getFiles() {
+	public Collection<FileDetails> getFiles() {
 		return files;
 	}
 	
-	public void setFiles(Collection<FileDescriptor> files) {
+	public void setFiles(Collection<FileDetails> files) {
 		this.files = files;
 	}
 

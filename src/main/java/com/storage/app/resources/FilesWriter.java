@@ -37,7 +37,7 @@ public class FilesWriter implements MessageBodyWriter<Files> {
 		StringBuilder sb = new StringBuilder();
 		sb.append("<body><table width=\"100%\"><tr> <th>File name</th> <th>size</th> <th>last modified</th></tr>");
 		
-		for (FileDescriptor fileHead : arg0.getFiles()) {
+		for (FileDetails fileHead : arg0.getFiles()) {
 			sb.append("<tr>");
 			
 			sb.append("<td><a href=\"" + fileHead.getUri() + "\">" + fileHead.getName() + "</a></td>");
